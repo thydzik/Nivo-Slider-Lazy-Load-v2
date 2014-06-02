@@ -1,5 +1,5 @@
 /*
- * jQuery Nivo Slider v3.1
+ * jQuery Nivo Slider v3.2
  * http://nivo.dev7studios.com
  *
  * Copyright 2012, Dev7studios
@@ -61,7 +61,7 @@
         // Checks in data-src, then in src
         var parse_src = function(elem) {
 			return elem.data('src') || elem.attr('src');
-        }
+        };
         
         // Parse out the image URL string at the given child index.
         // Does no bounds checking!
@@ -71,19 +71,31 @@
 			} else {
 				return $(kids[idx]).find('img:first');
 			}
-        }
+        };
         
         // Preload the image in the kids collection at the given step from the current slide
         var preload_image = function(step) {
 		
 			var nxt = vars.currentSlide + step;
-			if (nxt >= kids.length) nxt = 0
+			if (nxt >= kids.length) nxt = 0;
 			else if (nxt < 0) nxt = 0;
 			var img = parse_image(nxt);
 			img.attr('src', img.data('src'));
-        }
+         return img;
+        };
 		// END ADDED
         
+        // If randomStart
+        if(settings.randomStart){
+            settings.startSlide = Math.floor(Math.random() * vars.totalSlides);
+        }
+		
+        // Set startSlide
+        if(settings.startSlide > 0){
+            if(settings.startSlide >= vars.totalSlides) { settings.startSlide = vars.totalSlides - 1; }
+            vars.currentSlide = settings.startSlide;
+        }
+
         // Get initial image
         if($(kids[vars.currentSlide]).is('img')){
             vars.currentImage = $(kids[vars.currentSlide]);
@@ -98,23 +110,13 @@
         
         // Set first background
 		//preload_image(0); //the first image is a src image
-		var sliderImg = $('<img class="nivo-main-image" src="" />');
+		var sliderImg = $('<img/>').addClass('nivo-main-image');
         //sliderImg.attr('src', vars.currentImage.attr('src')).show();
-		sliderImg.attr('src', parse_src(vars.currentImage)).show();//ADDED
+		  sliderImg.attr('src', parse_src(vars.currentImage)).show();//ADDED
         slider.append(sliderImg);
 		
-        // If randomStart
-        if(settings.randomStart){
-            settings.startSlide = Math.floor(Math.random() * vars.totalSlides);
-        }
 		
-        // Set startSlide
-        if(settings.startSlide > 0){
-            if(settings.startSlide >= vars.totalSlides) { settings.startSlide = vars.totalSlides - 1; }
-            vars.currentSlide = settings.startSlide;
-        }
-		
-		preload_image(1);
+		//preload_image(1); //see https://github.com/jhit/Nivo-Slider-Lazy-Load-v2/commit/657eda5d06a83777e4b79ad3c047cab9380cb93e#commitcomment-5689307
 
         //START ADDED
         // Preload second image to transition into.
@@ -159,7 +161,7 @@
             } else {
                 nivoCaption.stop().fadeOut(settings.animSpeed);
             }
-        }
+        };
         
         //Process initial  caption
         processCaption(settings);
@@ -167,14 +169,28 @@
         // In the words of Super Mario "let's a go!"
         var timer = 0;
         if(!settings.manualAdvance && kids.length > 1){
-            timer = setInterval(function(){ nivoRun(slider, kids, settings, false); }, settings.pauseTime);
+            timer = setInterval(function(){ 
+               if(vars.currentSlide == vars.totalSlides - 1) {
+                   var nextImage = parse_image(0);
+               }
+               else {
+                   var nextImage = parse_image(vars.currentSlide + 1);
+               }
+               nextImage.attr('src', parse_src(nextImage));
+               if(nextImage.prop('naturalHeight') > 0) {
+                  nivoRun(slider, kids, settings, false);
+               }
+               else {
+                   nextImage.load(function(){nivoRun(slider, kids, settings, false)});
+               }
+            }, settings.pauseTime);
         }
         
         // Add Direction nav
         if(settings.directionNav){
             slider.append('<div class="nivo-directionNav"><a class="nivo-prevNav">'+ settings.prevText +'</a><a class="nivo-nextNav">'+ settings.nextText +'</a></div>');
             
-            $('a.nivo-prevNav', slider).live('click', function(){
+            $(slider).on('click', 'a.nivo-prevNav', function(){
                 if(vars.running) { return false; }
                 clearInterval(timer);
                 timer = '';
@@ -195,7 +211,7 @@
                 }
             });
             
-            $('a.nivo-nextNav', slider).live('click', function(){
+            $(slider).on('click', 'a.nivo-nextNav', function(){
                 if(vars.running) { return false; }
                 clearInterval(timer);
                 timer = '';
@@ -753,7 +769,7 @@
         pauseTime: 3000,
         startSlide: 0,
         directionNav: true,
-        controlNav: false,
+        controlNav: true,
         controlNavThumbs: false,
         pauseOnHover: true,
         manualAdvance: false,
