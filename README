@@ -1,8 +1,0 @@
-Lazy Load v2
-
-
-Differences to thydzik version:
-
-- Added proper lazy loading for the previous/next buttons.
-- Added proper lazy loading for the control buttons.
-- Changed the the src attribute to a empty string instead of "#" because it caused Chrome on my site to preload the image with the source url http://www.mysite.com/#
